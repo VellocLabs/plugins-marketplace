@@ -1,0 +1,12 @@
+name = "velloc-marketplace"
+compatibility_date = "2026-05-19"
+
+# Runs only for requests no static asset matched: error responses get
+# `Cache-Control: no-store` so a cached 404 never outlives a deploy.
+main = "worker/asset_gateway.mjs"
+
+[assets]
+# Written by `node scripts/stage_site.mjs`: marketplace.tar.gz, index.json
+# and _headers. Never commit site/.
+directory = "./site"
+binding = "ASSETS"

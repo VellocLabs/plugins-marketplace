@@ -1,0 +1,24 @@
+name: CI
+
+# Every push and pull request: the check, the stager's test, a dry stage.
+# Deploys nothing.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/check_marketplace.mjs
+      - run: node --test scripts/stage_site.test.mjs
+      - run: node scripts/stage_site.mjs . site
+      - run: cat site/index.json
