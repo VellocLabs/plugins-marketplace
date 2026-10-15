@@ -91,8 +91,11 @@ export const HEADERS = `# The two files a client reads: the edge revalidates eve
   Cache-Control: no-store
 `
 
+const COMMIT_SHA = /^[0-9a-f]{7,40}$/i
+
+/** The commit being staged: a CI-provided sha when it is one, else the checkout's HEAD. */
 export function sourceCommit(root) {
-  const fromCi = process.env.SOURCE_COMMIT ?? process.env.WORKERS_CI_COMMIT_SHA
+  const fromCi = [process.env.SOURCE_COMMIT, process.env.WORKERS_CI_COMMIT_SHA].find(v => v && COMMIT_SHA.test(v))
   if (fromCi) return fromCi
   try {
     return execSync('git rev-parse HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()

@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 import { checkMarketplace } from './check_marketplace.mjs'
-import { INDEX_NAME, TARBALL_NAME, stageSite } from './stage_site.mjs'
+import { INDEX_NAME, TARBALL_NAME, sourceCommit, stageSite } from './stage_site.mjs'
 
 function scratchMarketplace(plugins) {
   const root = mkdtempSync(join(tmpdir(), 'plugins-marketplace-'))
@@ -72,6 +72,21 @@ test('stages the catalog and the plugins under one wrapper directory, with the d
     'plugins/beta/skills/hello/SKILL.md',
   ])
   assert.match(readFileSync(join(out, '_headers'), 'utf8'), /\/index\.json\n {2}! Cache-Control\n {2}Cache-Control: no-cache/)
+})
+
+test('a CI value that is not a commit sha falls back to the checkout', () => {
+  const saved = process.env.WORKERS_CI_COMMIT_SHA
+  try {
+    process.env.WORKERS_CI_COMMIT_SHA = 'main'
+    const commit = sourceCommit(join(import.meta.dirname, '..'))
+    assert.notEqual(commit, 'main')
+    assert.match(commit, /^([0-9a-f]{40}|unknown)$/)
+    process.env.WORKERS_CI_COMMIT_SHA = 'ABCDEF0123456789abcdef0123456789abcdef01'
+    if (!process.env.SOURCE_COMMIT) assert.equal(sourceCommit('.'), 'ABCDEF0123456789abcdef0123456789abcdef01')
+  } finally {
+    if (saved === undefined) delete process.env.WORKERS_CI_COMMIT_SHA
+    else process.env.WORKERS_CI_COMMIT_SHA = saved
+  }
 })
 
 test('the same tree stages to the same bytes', () => {
