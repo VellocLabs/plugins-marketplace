@@ -13,7 +13,7 @@ import { checkMarketplace } from './check_marketplace.mjs'
 import { INDEX_NAME, TARBALL_NAME, stageSite } from './stage_site.mjs'
 
 function scratchMarketplace(plugins) {
-  const root = mkdtempSync(join(tmpdir(), 'velloc-marketplace-'))
+  const root = mkdtempSync(join(tmpdir(), 'plugins-marketplace-'))
   mkdirSync(join(root, '.claude-plugin'), { recursive: true })
   writeFileSync(
     join(root, '.claude-plugin', 'marketplace.json'),
@@ -62,8 +62,8 @@ test('stages the catalog and the plugins under one wrapper directory, with the d
   assert.equal(index.size, tarball.length)
   assert.deepEqual(JSON.parse(readFileSync(join(out, INDEX_NAME), 'utf8')), index)
   const paths = tarPaths(tarball)
-  assert.ok(paths.every(p => p.startsWith('velloc-marketplace-abcdef0/')), paths.join('\n'))
-  const stripped = paths.map(p => p.slice('velloc-marketplace-abcdef0/'.length))
+  assert.ok(paths.every(p => p.startsWith('plugins-marketplace-abcdef0/')), paths.join('\n'))
+  const stripped = paths.map(p => p.slice('plugins-marketplace-abcdef0/'.length))
   assert.deepEqual(stripped, [
     '.claude-plugin/marketplace.json',
     'plugins/alpha/.claude-plugin/plugin.json',

@@ -4,8 +4,8 @@ The plugins and mods Velloc installs on its own. One repository, one origin,
 released on its own cadence: Velloc's runtime holds nothing but the origin's
 address and reads two files from it.
 
-Repository: `claude-code-mods/velloc-marketplace`. Origin: `https://plugins.velloc.app`,
-the custom domain of the `velloc-marketplace` worker. The owner block in
+Repository: `claude-code-mods/plugins-marketplace`. Origin: `https://plugins.velloc.app`,
+the custom domain of the `plugins-marketplace` worker. The owner block in
 `.claude-plugin/marketplace.json` names the publisher.
 
 ## Layout
@@ -20,7 +20,7 @@ scripts/check_marketplace.mjs        the gate every change passes
 scripts/stage_site.mjs               builds site/ (what the origin serves)
 worker/asset_gateway.mjs             the worker in front of the static files
 wrangler.toml                        the Cloudflare worker
-.github/workflows/                   ci.yml (check), deploy.yml (publish), rollback.yml
+.github/workflows/                   ci.yml (check and dry stage on every push)
 ```
 
 ## A listing
@@ -62,7 +62,7 @@ switched off is left alone.
 ## Working on it
 
 ```bash
-npm ci
+npm ci                                  # wrangler, for a local deploy only
 node scripts/check_marketplace.mjs      # the gate
 node scripts/stage_site.mjs             # writes site/
 node --test scripts/stage_site.test.mjs   # the stager's own test
@@ -77,14 +77,22 @@ to force the check.
 
 ## Releasing
 
-1. Merge to `main`. CI runs the check and a dry stage.
-2. Run the **Deploy** workflow on `main` (ref + a note). It checks, stages,
-   deploys with `wrangler deploy`, and publishes a GitHub Release
-   `marketplace-<date>.<n>` carrying `site.zip` and `index.json`.
-3. Clients pick the build up within a day.
-4. A bad build: run **Rollback** with the previous release's tag. It
-   redeploys that `site.zip` verbatim — no checkout, no build.
+Cloudflare Workers Builds deploys this repository: every push to `main` is
+a release.
 
-One-time setup: the repository secrets `CLOUDFLARE_ACCOUNT_ID` and
-`CLOUDFLARE_API_TOKEN` (a token with Workers Scripts edit), and the custom
-domain on the worker in the Cloudflare dashboard.
+1. Bump `version` in the changed plugin's `plugin.json` — a client upgrades
+   only to a higher version.
+2. Push to `main`. Workers Builds runs `npm run build` (check, the stager's
+   test, stage) and `npx wrangler deploy`; a failing check deploys nothing.
+   GitHub CI runs the same check on every push and pull request.
+3. Clients pick the build up within a day (`index.json` `buildId` is
+   `<commit7>-<build8>`).
+4. A bad build: Cloudflare dashboard → the `plugins-marketplace` worker →
+   Deployments → roll back to an earlier version. Clients that already
+   upgraded keep the higher version; ship a fix with a higher version.
+
+One-time setup (Workers & Pages → Create → Import a repository): project
+name `plugins-marketplace` (it must equal `name` in `wrangler.toml`), build
+command `npm run build`, deploy command `npx wrangler deploy`, preview
+builds off, Cloudflare Access off; then the custom domain
+`plugins.velloc.app` on the worker.

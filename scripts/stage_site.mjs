@@ -92,7 +92,8 @@ export const HEADERS = `# The two files a client reads: the edge revalidates eve
 `
 
 export function sourceCommit(root) {
-  if (process.env.SOURCE_COMMIT) return process.env.SOURCE_COMMIT
+  const fromCi = process.env.SOURCE_COMMIT ?? process.env.WORKERS_CI_COMMIT_SHA
+  if (fromCi) return fromCi
   try {
     return execSync('git rev-parse HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
   } catch {
@@ -106,10 +107,10 @@ export function stageSite(root, outDir, options = {}) {
   if (problems.length > 0) throw new Error(`stage: the check fails:\n${problems.map(p => `  ${p}`).join('\n')}`)
   const commit = options.sourceCommit ?? sourceCommit(root)
   const short = commit.slice(0, 7)
-  const runId = options.runId ?? process.env.GITHUB_RUN_ID ?? 'local'
+  const runId = options.runId ?? process.env.GITHUB_RUN_ID ?? process.env.WORKERS_CI_BUILD_UUID?.slice(0, 8) ?? 'local'
   const catalog = JSON.parse(readFileSync(join(root, CATALOG_PATH), 'utf8'))
   const files = shippedFiles(root)
-  const tarball = buildTarball(root, files, `velloc-marketplace-${short}`)
+  const tarball = buildTarball(root, files, `plugins-marketplace-${short}`)
   const index = {
     name: catalog.name,
     buildId: `${short}-${runId}`,

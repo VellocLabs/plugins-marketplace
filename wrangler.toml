@@ -1,4 +1,4 @@
-name = "velloc-marketplace"
+name = "plugins-marketplace"
 compatibility_date = "2026-05-19"
 
 # Runs only for requests no static asset matched: error responses get
